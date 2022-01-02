@@ -19,7 +19,7 @@ function! minx#add(char, entry) abort
 
   " Add entry.
   let s:entry_id += 1
-  let s:state.chars[l:char].entries[s:entry_id] = s:entry(a:entry)
+  let s:state.chars[l:char].entries[s:entry_id] = s:entry(s:entry_id, a:entry)
 endfunction
 
 "
@@ -43,7 +43,7 @@ function! minx#search(...) abort
   let l:ctx = {}
   function! l:ctx.callback(...) abort
     let l:pattern = get(a:000, 0, '')
-    let l:flags = get(a:000, 1, 'zn') .. 'n'
+    let l:flags = get(a:000, 1, 'znc') .. 'n'
     let l:stopline = get(a:000, 2, 0) + line('.')
     let l:timeout = get(a:000, 3, 200)
     let l:pos = searchpos(l:pattern, l:flags, l:stopline, l:timeout)
@@ -64,8 +64,8 @@ function! minx#searchpair(...) abort
     let l:start = get(a:000, 0, '')
     let l:middle = get(a:000, 1, '')
     let l:end = get(a:000, 2, '')
-    let l:flags = get(a:000, 3, 'zn') .. 'n'
-    let l:skip = get(a:000, 4, 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
+    let l:flags = get(a:000, 3, 'znc') .. 'n'
+    let l:skip = get(a:000, 4, '')
     let l:stopline = get(a:000, 2, 0) + line('.')
     let l:timeout = get(a:000, 6, 200)
 
@@ -123,7 +123,12 @@ function! s:sorted(entries) abort
     if a:a.priority != a:b.priority
       return a:b.priority - a:b.priority
     endif
-    return strlen(a:b.at) - strlen(a:a.at)
+    let l:alen = strlen(a:a.at)
+    let l:blen = strlen(a:b.at)
+    if l:alen != l:blen
+      return l:blen - l:alen
+    endif
+    return a:a.id - a:b.id
   endfunction
   return sort(copy(a:entries), function('s:compare'))
 endfunction
@@ -131,20 +136,21 @@ endfunction
 "
 " s:entry
 "
-function! s:entry(entry) abort
-  let s:entry_id += 1
+function! s:entry(entry_id, entry) abort
   if type(a:entry) == v:t_string
     return {
+    \   'id': a:entry_id,
     \   'priority': 0,
     \   'at': '\%#',
     \   'keys': a:entry,
     \ }
   endif
-  let l:entry = copy(a:entry)
-  let l:entry.priority = get(a:entry, 'priority', 0)
-  let l:entry.at = get(a:entry, 'at', '\%#')
-  let l:entry.keys = get(a:entry, 'keys', '')
-  return l:entry
+  return {
+  \   'id': a:entry_id,
+  \   'priority': get(a:entry, 'priority', 0),
+  \   'at': get(a:entry, 'at', '\%#'),
+  \   'keys': get(a:entry, 'keys', ''),
+  \ }
 endfunction
 
 "
