@@ -33,7 +33,7 @@ function! minx#feedkeys#_pop() abort
   let l:keys = substitute(l:keys, s:left, s:undojoin .. s:left, 'g')
   let l:keys = substitute(l:keys, s:right, s:undojoin .. s:right, 'g')
   call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'in')
-  call feedkeys(l:keys, 'i' .. (l:step.noremap ? 'n' : 'm'))
+  call feedkeys(l:keys, l:step.noremap ? 'in' : 'im')
 endfunction
 
 "
