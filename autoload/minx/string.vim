@@ -25,13 +25,8 @@ endfunction
 " minx#string#normalize
 "
 function! minx#string#normalize(char) abort
-  call nvim_set_keymap('t', '<Plug>(minx:normalize)', a:char, {})
-  for l:map in nvim_get_keymap('t')
-    if l:map.lhs == '<Plug>(minx:normalize)'
-      return l:map.rhs
-    endif
-  endfor
-  return a:char
+  call execute(printf('tnoremap <Plug>(minx:normalize) %s', a:char))
+  return maparg('<Plug>(minx:normalize)', 't')
 endfunction
 
 "

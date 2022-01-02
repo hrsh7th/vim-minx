@@ -11,10 +11,7 @@ function! minx#add(char, entry) abort
   let l:char = minx#string#normalize(a:char)
   if !has_key(s:state.chars, l:char)
     let s:state.chars[l:char] = { 'entries': {} }
-    call nvim_set_keymap('i', l:char, printf('<SNR>%s_on_char(%s)', s:SID(), minx#string#to_id(l:char)), {
-    \   'noremap': v:true,
-    \   'expr': v:true
-    \ })
+    call execute(printf('inoremap <expr> %s <SID>on_char(%s)', l:char, minx#string#to_id(l:char)))
   endif
 
   " Add entry.
