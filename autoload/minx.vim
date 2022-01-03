@@ -8,29 +8,30 @@ let s:state = {
 " minx#add
 "
 function! minx#add(char, entry) abort
-  let l:char = minx#string#normalize(a:char)
-  if !has_key(s:state.chars, l:char)
-    let s:state.chars[l:char] = { 'entries': {} }
-    call execute(printf('inoremap <expr> %s <SID>on_char(%s)', l:char, minx#string#to_id(l:char)))
+  let l:codes = minx#string#termcodes(a:char)
+  if !has_key(s:state.chars, l:codes)
+    call execute(printf('inoremap <expr> %s <SID>on_char(%s)', a:char, minx#string#to_id(l:codes)))
+    let s:state.chars[l:codes] = { 'entries': [] }
   endif
 
   " Add entry.
   let s:entry_id += 1
-  let s:state.chars[l:char].entries[s:entry_id] = s:entry(s:entry_id, a:entry)
+  let s:state.chars[l:codes].entries += [s:entry(s:entry_id, a:entry)]
+  let s:state.chars[l:codes].entries = s:sorted(s:state.chars[l:codes].entries)
 endfunction
 
 "
 " minx#expand
 "
 function! minx#expand(char) abort
-  let l:char = minx#string#normalize(a:char)
-  for [l:entry_id, l:entry] in items(s:state.chars[l:char].entries)
+  let l:codes = minx#string#termcodes(a:char)
+  for l:entry in get(s:state.chars, l:codes, { 'entries': [] }).entries
     let l:pos = searchpos(l:entry.at, 'zn')
     if l:pos[0] != 0
-      return printf("\<Cmd>call <SNR>%d_on_entry(%s, %s)\<CR>", s:SID(), minx#string#to_id(l:char), l:entry_id)
+      return printf("\<Cmd>call <SNR>%d_on_entry(%s, %s)\<CR>", s:SID(), minx#string#to_id(l:codes), l:entry.id)
     endif
   endfor
-  return minx#string#termcodes(l:char)
+  return l:codes
 endfunction
 
 "
@@ -102,13 +103,17 @@ endfunction
 " s:on_entry
 "
 function! s:on_entry(char_id, entry_id) abort
-  let l:char = minx#string#from_id(a:char_id) 
-  if !has_key(s:state.chars, l:char)
-    return minx#string#termcodes(l:char, v:true, v:true, v:true)
+  let l:codes = minx#string#from_id(a:char_id) 
+  if !has_key(s:state.chars, l:codes)
+    return l:codes
   endif
 
-  let l:entry = s:state.chars[l:char].entries[a:entry_id]
-  call minx#feedkeys#do(l:entry.keys)
+  for l:entry in s:state.chars[l:codes].entries
+    if l:entry.id == a:entry_id
+      call minx#feedkeys#do(l:entry.keys)
+      break
+    endif
+  endfor
   return ''
 endfunction
 
@@ -118,7 +123,7 @@ endfunction
 function! s:sorted(entries) abort
   function! s:compare(a, b) abort
     if a:a.priority != a:b.priority
-      return a:b.priority - a:b.priority
+      return a:b.priority - a:a.priority
     endif
     let l:alen = strlen(a:a.at)
     let l:blen = strlen(a:b.at)

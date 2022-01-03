@@ -22,14 +22,6 @@ function! minx#string#from_id(id) abort
 endfunction
 
 "
-" minx#string#normalize
-"
-function! minx#string#normalize(char) abort
-  call execute(printf('tnoremap <Plug>(minx:normalize) %s', a:char))
-  return maparg('<Plug>(minx:normalize)', 't')
-endfunction
-
-"
 " termcodes
 "
 function! minx#string#termcodes(input) abort
