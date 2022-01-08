@@ -42,9 +42,7 @@ function! minx#search(...) abort
   function! l:ctx.callback(...) abort
     let l:pattern = get(a:000, 0, '')
     let l:flags = get(a:000, 1, 'znc') .. 'n'
-    let l:stopline = get(a:000, 2, 0) + line('.')
-    let l:timeout = get(a:000, 3, 200)
-    let l:pos = searchpos(l:pattern, l:flags, l:stopline, l:timeout)
+    let l:pos = searchpos(l:pattern, l:flags)
     if l:pos[0] == 0
       return ''
     endif
@@ -64,10 +62,8 @@ function! minx#searchpair(...) abort
     let l:end = get(a:000, 2, '')
     let l:flags = get(a:000, 3, 'znc') .. 'n'
     let l:skip = get(a:000, 4, '')
-    let l:stopline = get(a:000, 2, 0) + line('.')
-    let l:timeout = get(a:000, 6, 200)
 
-    let l:pos = searchpairpos(l:start, l:middle, l:end, l:flags, l:skip, l:stopline, l:timeout)
+    let l:pos = searchpairpos(l:start, l:middle, l:end, l:flags, l:skip)
     if l:pos[0] == 0
       return ''
     endif
@@ -89,7 +85,7 @@ function! s:move(pos) abort
     endif
     return ''
   endif
-  return ''
+  return printf('<C-o>:<C-u>call cursor(%s, %s)<CR>', a:pos[0], a:pos[1])
 endfunction
 
 "

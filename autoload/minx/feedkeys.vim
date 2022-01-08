@@ -1,3 +1,4 @@
+let s:undobreak = minx#string#termcodes('<C-g>u')
 let s:undojoin = minx#string#termcodes('<C-g>U')
 let s:left = minx#string#termcodes('<Left>')
 let s:right = minx#string#termcodes('<Right>')
@@ -30,8 +31,8 @@ function! minx#feedkeys#_pop() abort
   let l:step = s:step(remove(s:stack, len(s:stack) - 1))
   let l:keys = minx#string#termcodes(l:step.keys)
   let l:keys = substitute(l:keys, s:undojoin, '', 'g')
-  let l:keys = substitute(l:keys, s:left, s:undojoin .. s:left, 'g')
-  let l:keys = substitute(l:keys, s:right, s:undojoin .. s:right, 'g')
+  let l:keys = substitute(l:keys, '\%(' .. s:undobreak .. '\)\@<!' .. s:left, s:undojoin .. s:left, 'g')
+  let l:keys = substitute(l:keys,  '\%(' .. s:undobreak .. '\)\@<!' .. s:right, s:undojoin .. s:right, 'g')
   call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'in')
   call feedkeys(l:keys, l:step.noremap ? 'in' : 'im')
 endfunction
