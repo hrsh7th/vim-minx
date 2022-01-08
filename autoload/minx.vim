@@ -26,7 +26,7 @@ endfunction
 function! minx#expand(char) abort
   let l:codes = minx#string#termcodes(a:char)
   for l:entry in get(s:state.chars, l:codes, { 'entries': [] }).entries
-    let l:pos = searchpos(l:entry.at, 'zn')
+    let l:pos = searchpos(l:entry.at, 'znc')
     if l:pos[0] != 0
       return printf("\<Cmd>call <SNR>%d_on_entry(%s, %s)\<CR>", s:SID(), minx#string#to_id(l:codes), l:entry.id)
     endif
@@ -42,7 +42,7 @@ function! minx#search(...) abort
   function! l:ctx.callback(...) abort
     let l:pattern = get(a:000, 0, '')
     let l:flags = get(a:000, 1, 'znc') .. 'n'
-    let l:pos = searchpos(l:pattern, l:flags)
+    let l:pos = searchpos(l:pattern, l:flags, line('.'))
     if l:pos[0] == 0
       return ''
     endif
