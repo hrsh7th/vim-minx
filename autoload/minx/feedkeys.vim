@@ -12,13 +12,10 @@ let s:stack = []
 " minx#feedkeys#do
 "
 function! minx#feedkeys#do(steps) abort
-  let l:run = len(s:stack) == 0
-  for l:Step in reverse(deepcopy(type(a:steps) == v:t_list ? a:steps : [a:steps]))
-    call add(s:stack, l:Step)
-  endfor
-  if l:run
+  if len(s:stack) == 0
     call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'n')
   endif
+  let s:stack += reverse(deepcopy(type(a:steps) == v:t_list ? a:steps : [a:steps]))
 endfunction
 
 "
@@ -28,13 +25,17 @@ function! minx#feedkeys#_pop() abort
   if len(s:stack) == 0
     return
   endif
-  let l:step = s:step(remove(s:stack, len(s:stack) - 1))
-  let l:keys = minx#string#termcodes(l:step.keys)
-  let l:keys = substitute(l:keys, s:undojoin, '', 'g')
-  let l:keys = substitute(l:keys, '\%(' .. s:undobreak .. '\)\@<!' .. s:left, s:undojoin .. s:left, 'g')
-  let l:keys = substitute(l:keys,  '\%(' .. s:undobreak .. '\)\@<!' .. s:right, s:undojoin .. s:right, 'g')
-  call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'in')
-  call feedkeys(l:keys, l:step.noremap ? 'in' : 'im')
+  try
+    let l:step = s:step(remove(s:stack, len(s:stack) - 1))
+    let l:keys = minx#string#termcodes(l:step.keys)
+    let l:keys = substitute(l:keys, s:undojoin, '', 'g')
+    let l:keys = substitute(l:keys, '\%(' .. s:undobreak .. '\)\@<!' .. s:left, s:undojoin .. s:left, 'g')
+    let l:keys = substitute(l:keys,  '\%(' .. s:undobreak .. '\)\@<!' .. s:right, s:undojoin .. s:right, 'g')
+    call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'in')
+    call feedkeys(l:keys, l:step.noremap ? 'in' : 'im')
+  catch /.*/
+    echomsg string({ 'exception': v:exception, 'throwpoint': v:throwpoint, 'step': l:step })
+  endtry
 endfunction
 
 "

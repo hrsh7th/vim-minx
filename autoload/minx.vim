@@ -35,14 +35,43 @@ function! minx#expand(char) abort
 endfunction
 
 "
+" minx#enter
+"
+function! minx#enter() abort
+  let l:ctx = {}
+  function! l:ctx.callback(...) abort
+    let l:current = getline('.')
+    let l:one_indent = !&expandtab ? "\t" : repeat(' ', &shiftwidth ? &shiftwidth : &tabstop)
+    let l:base_indent = matchstr(l:current, '^\s*')
+    let l:text = "\n" .. l:base_indent .. l:one_indent .. "\n" .. l:base_indent
+    execute printf('noautocmd keeppatterns keepjumps silent substitute/\%%#/\=l:text/%se', &gdefault ? 'g' : '')
+    return printf('<Cmd>call cursor(%s, %s)<CR>', line('.') - 1, strlen(l:base_indent) + strlen(l:one_indent) + 1)
+  endfunction
+  return function(l:ctx.callback, a:000, l:ctx)
+endfunction
+
+"
+" minx#capture
+"
+function! minx#capture(...) abort
+  let l:ctx = {}
+  function! l:ctx.callback(pattern) abort
+    let l:pos = searchpos(a:pattern, 'zncp')
+    if l:pos[0] == 0 || l:pos[2] == 0
+      return ''
+    endif
+    return matchlist(getline(l:pos[0])[l:pos[1] - 1 : -1], substitute(a:pattern, '\\%#', '', 'g'))[1]
+  endfunction
+  return function(l:ctx.callback, a:000, l:ctx)
+endfunction
+
+"
 " minx#search
 "
 function! minx#search(...) abort
   let l:ctx = {}
-  function! l:ctx.callback(...) abort
-    let l:pattern = get(a:000, 0, '')
-    let l:flags = get(a:000, 1, 'znc') .. 'n'
-    let l:pos = searchpos(l:pattern, l:flags, line('.'))
+  function! l:ctx.callback(pattern) abort
+    let l:pos = searchpos(a:pattern, 'znc')
     if l:pos[0] == 0
       return ''
     endif
@@ -60,10 +89,7 @@ function! minx#searchpair(...) abort
     let l:start = get(a:000, 0, '')
     let l:middle = get(a:000, 1, '')
     let l:end = get(a:000, 2, '')
-    let l:flags = get(a:000, 3, 'znc') .. 'n'
-    let l:skip = get(a:000, 4, '')
-
-    let l:pos = searchpairpos(l:start, l:middle, l:end, l:flags, l:skip)
+    let l:pos = searchpairpos(l:start, l:middle, l:end, 'znc')
     if l:pos[0] == 0
       return ''
     endif
@@ -81,7 +107,7 @@ function! s:move(pos) abort
     if l:delta > 0
       return repeat('<Right>', l:delta)
     elseif l:delta < 0
-      return repeat('<Left>', l:delta)
+      return repeat('<Left>', abs(l:delta))
     endif
     return ''
   endif
