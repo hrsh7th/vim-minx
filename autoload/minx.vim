@@ -81,7 +81,7 @@ endfunction
 " s:entry
 "
 function! s:entry(entry_id, entry) abort
-  if type(a:entry) == v:t_string
+  if type(a:entry) != v:t_dict
     return {
     \   'id': a:entry_id,
     \   'priority': 0,

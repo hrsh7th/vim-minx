@@ -22,11 +22,19 @@ endfunction
 " minx#feedkeys#_pop
 "
 function! minx#feedkeys#_pop() abort
+  if mode(1) ==# 'c'
+    augroup minx#feedkeys#_pop
+      autocmd!
+      autocmd CmdlineLeave * ++once call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'n')
+    augroup END
+    return
+  endif
   if len(s:stack) == 0
     return
   endif
   try
-    let l:step = s:step(remove(s:stack, len(s:stack) - 1))
+    let l:Head = remove(s:stack, len(s:stack) - 1)
+    let l:step = s:step(l:Head)
     let l:keys = minx#string#termcodes(l:step.keys)
     let l:keys = substitute(l:keys, s:undojoin, '', 'g')
     let l:keys = substitute(l:keys, '\%(' .. s:undobreak .. '\)\@<!' .. s:left, s:undojoin .. s:left, 'g')
@@ -34,7 +42,7 @@ function! minx#feedkeys#_pop() abort
     call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'in')
     call feedkeys(l:keys, l:step.noremap ? 'in' : 'im')
   catch /.*/
-    echomsg string({ 'exception': v:exception, 'throwpoint': v:throwpoint, 'step': l:step })
+    echomsg string({ 'exception': v:exception, 'throwpoint': v:throwpoint, 'head': l:Head })
   endtry
 endfunction
 
