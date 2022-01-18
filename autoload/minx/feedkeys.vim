@@ -13,36 +13,41 @@ let s:stack = []
 "
 function! minx#feedkeys#do(steps) abort
   if len(s:stack) == 0
-    call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'n')
+    call feedkeys("\<Cmd>call minx#feedkeys#pop()\<CR>", 'n')
   endif
   let s:stack += reverse(deepcopy(type(a:steps) == v:t_list ? a:steps : [a:steps]))
 endfunction
 
 "
-" minx#feedkeys#_pop
+" minx#feedkeys#pop
 "
-function! minx#feedkeys#_pop() abort
+function! minx#feedkeys#pop() abort
   if mode(1) ==# 'c'
     augroup minx#feedkeys#_pop
       autocmd!
-      autocmd CmdlineLeave * ++once call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'n')
+      autocmd CmdlineLeave * ++once call feedkeys("\<Cmd>call minx#feedkeys#pop()\<CR>", 'n')
     augroup END
     return
   endif
   if len(s:stack) == 0
     return
   endif
+
+  call feedkeys("\<Cmd>call minx#feedkeys#pop()\<CR>", 'in')
   try
-    let l:Head = remove(s:stack, len(s:stack) - 1)
-    let l:step = s:step(l:Head)
-    let l:keys = minx#string#termcodes(l:step.keys)
-    let l:keys = substitute(l:keys, s:undojoin, '', 'g')
-    let l:keys = substitute(l:keys, '\%(' .. s:undobreak .. '\)\@<!' .. s:left, s:undojoin .. s:left, 'g')
-    let l:keys = substitute(l:keys,  '\%(' .. s:undobreak .. '\)\@<!' .. s:right, s:undojoin .. s:right, 'g')
-    call feedkeys("\<Cmd>call minx#feedkeys#_pop()\<CR>", 'in')
-    call feedkeys(l:keys, l:step.noremap ? 'in' : 'im')
+    let l:step = s:step(remove(s:stack, len(s:stack) - 1))
+    if type(l:step) == v:t_list
+      return minx#feedkeys#do(l:step)
+    endif
+    if type(l:step) == v:t_dict
+      let l:keys = minx#string#termcodes(l:step.keys)
+      let l:keys = substitute(l:keys, s:undojoin, '', 'g')
+      let l:keys = substitute(l:keys, '\%(' .. s:undobreak .. '\)\@<!' .. s:left, s:undojoin .. s:left, 'g')
+      let l:keys = substitute(l:keys,  '\%(' .. s:undobreak .. '\)\@<!' .. s:right, s:undojoin .. s:right, 'g')
+      call feedkeys(l:keys, l:step.noremap ? 'in' : 'im')
+    endif
   catch /.*/
-    echomsg string({ 'exception': v:exception, 'throwpoint': v:throwpoint, 'head': l:Head })
+    echomsg string({ 'exception': v:exception, 'throwpoint': v:throwpoint })
   endtry
 endfunction
 

@@ -1,4 +1,18 @@
 "
+" minx#x#token
+"
+function! minx#x#token() abort
+  return function('minx#u#token', a:000)
+endfunction
+
+"
+" minx##white
+"
+function! minx#x#white() abort
+  return function('minx#u#white', a:000)
+endfunction
+
+"
 " minx#x#enterpair
 "
 function! minx#x#enterpair(...) abort

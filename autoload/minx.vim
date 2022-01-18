@@ -8,55 +8,30 @@ let s:state = {
 " minx#add
 "
 function! minx#add(char, entry) abort
-  let l:codes = minx#string#termcodes(a:char)
-  if !has_key(s:state.chars, l:codes)
-    call execute(printf('inoremap <expr> %s <SID>on_char(%s)', a:char, minx#string#to_id(l:codes)))
-    let s:state.chars[l:codes] = { 'entries': [] }
+  let l:char_id = minx#serialize#to_id(a:char)
+  if !has_key(s:state.chars, l:char_id)
+    call execute(printf('inoremap <expr> <silent> %s minx#expand(minx#serialize#from_id(%s))', a:char, l:char_id))
+    let s:state.chars[l:char_id] = { 'entries': [] }
   endif
 
   " Add entry.
   let s:entry_id += 1
-  let s:state.chars[l:codes].entries += [s:entry(s:entry_id, a:entry)]
-  let s:state.chars[l:codes].entries = s:sorted(s:state.chars[l:codes].entries)
+  let s:state.chars[l:char_id].entries += [s:entry(s:entry_id, a:entry)]
+  let s:state.chars[l:char_id].entries = s:sorted(s:state.chars[l:char_id].entries)
 endfunction
 
 "
 " minx#expand
 "
 function! minx#expand(char) abort
-  let l:codes = minx#string#termcodes(a:char)
-  for l:entry in get(s:state.chars, l:codes, { 'entries': [] }).entries
+  let l:char_id = minx#serialize#to_id(a:char)
+  for l:entry in get(s:state.chars, l:char_id, { 'entries': [] }).entries
     let l:pos = searchpos(l:entry.at, 'znc')
     if l:pos[0] != 0
-      return printf("\<Cmd>call <SNR>%d_on_entry(%s, %s)\<CR>", s:SID(), minx#string#to_id(l:codes), l:entry.id)
+      return printf("\<Cmd>call minx#feedkeys#do(minx#serialize#from_id(%s))\<CR>", minx#serialize#to_id(l:entry.keys))
     endif
   endfor
-  return l:codes
-endfunction
-
-"
-" s:on_char
-"
-function! s:on_char(char_id) abort
-  return minx#expand(minx#string#from_id(a:char_id))
-endfunction
-
-"
-" s:on_entry
-"
-function! s:on_entry(char_id, entry_id) abort
-  let l:codes = minx#string#from_id(a:char_id) 
-  if !has_key(s:state.chars, l:codes)
-    return l:codes
-  endif
-
-  for l:entry in s:state.chars[l:codes].entries
-    if l:entry.id == a:entry_id
-      call minx#feedkeys#do(l:entry.keys)
-      break
-    endif
-  endfor
-  return ''
+  return minx#string#termcodes(a:char)
 endfunction
 
 "
@@ -95,12 +70,5 @@ function! s:entry(entry_id, entry) abort
   \   'at': get(a:entry, 'at', '\%#'),
   \   'keys': get(a:entry, 'keys', ''),
   \ }
-endfunction
-
-"
-" Get script id that uses to call `s:` function in feedkeys.
-"
-function! s:SID() abort
-  return matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_SID$')
 endfunction
 
