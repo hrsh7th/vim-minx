@@ -10,7 +10,7 @@ let s:state = {
 function! minx#add(char, entry) abort
   let l:char_id = minx#serialize#to_id(a:char)
   if !has_key(s:state.chars, l:char_id)
-    call execute(printf('inoremap <expr> <silent> %s minx#expand(minx#serialize#from_id(%s))', a:char, l:char_id))
+    call execute(printf('inoremap <silent> %s <Cmd>call feedkeys(minx#expand(minx#serialize#from_id(%s)), "ni")<CR>', a:char, l:char_id))
     let s:state.chars[l:char_id] = { 'entries': [] }
   endif
 
@@ -26,9 +26,11 @@ endfunction
 function! minx#expand(char) abort
   let l:char_id = minx#serialize#to_id(a:char)
   for l:entry in get(s:state.chars, l:char_id, { 'entries': [] }).entries
-    let l:pos = searchpos(l:entry.at, 'znc')
-    if l:pos[0] != 0
-      return printf("\<Cmd>call minx#feedkeys#do(minx#serialize#from_id(%s))\<CR>", minx#serialize#to_id(l:entry.keys))
+    if l:entry.ok()
+      let l:pos = searchpos(l:entry.at, 'znc')
+      if l:pos[0] != 0
+        return printf("\<Cmd>call minx#feedkeys#do(minx#serialize#from_id(%s))\<CR>", minx#serialize#to_id(l:entry.keys))
+      endif
     endif
   endfor
   return minx#string#termcodes(a:char)
@@ -61,6 +63,7 @@ function! s:entry(entry_id, entry) abort
     \   'id': a:entry_id,
     \   'priority': 0,
     \   'at': '\%#',
+    \   'ok': { -> v:true },
     \   'keys': a:entry,
     \ }
   endif
@@ -68,6 +71,7 @@ function! s:entry(entry_id, entry) abort
   \   'id': a:entry_id,
   \   'priority': get(a:entry, 'priority', 0),
   \   'at': get(a:entry, 'at', '\%#'),
+  \   'ok': { -> v:true },
   \   'keys': get(a:entry, 'keys', ''),
   \ }
 endfunction

@@ -16,6 +16,7 @@ function! minx#feedkeys#do(steps) abort
     call feedkeys("\<Cmd>call minx#feedkeys#pop()\<CR>", 'in')
   endif
   let s:stack += reverse(deepcopy(type(a:steps) == v:t_list ? a:steps : [a:steps]))
+  return ''
 endfunction
 
 "
@@ -23,7 +24,7 @@ endfunction
 "
 function! minx#feedkeys#pop() abort
   if mode(1) ==# 'c'
-    augroup minx#feedkeys#_pop
+    augroup [minx#feedkeys#_pop]
       autocmd!
       autocmd CmdlineLeave * ++once call feedkeys("\<Cmd>call minx#feedkeys#pop()\<CR>", 'in')
     augroup END
@@ -44,7 +45,7 @@ function! minx#feedkeys#pop() abort
       let l:keys = substitute(l:keys, s:undojoin, '', 'g')
       let l:keys = substitute(l:keys, '\%(' .. s:undobreak .. '\)\@<!' .. s:left, s:undojoin .. s:left, 'g')
       let l:keys = substitute(l:keys,  '\%(' .. s:undobreak .. '\)\@<!' .. s:right, s:undojoin .. s:right, 'g')
-      call feedkeys(l:keys, l:step.noremap ? 'tin' : 'tim')
+      call feedkeys(l:keys, l:step.noremap ? 'in' : 'im')
     endif
   catch /.*/
     echomsg string({ 'exception': v:exception, 'throwpoint': v:throwpoint })

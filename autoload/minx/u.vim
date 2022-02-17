@@ -15,9 +15,9 @@ endfunction
 function! minx#u#token() abort
   let l:next = searchpos(g:minx#u#re.token, 'znc')
   if minx#syntax#in(['String', 'TSString'], l:next)
-    return [{ -> s:move(l:next) },  { -> minx#u#next_syntax_group() }]
+    return [{ -> minx#u#move(l:next) },  { -> minx#u#next_syntax_group() }]
   endif
-  return s:move(l:next)
+  return minx#u#move(l:next)
 endfunction
 
 "
@@ -35,7 +35,7 @@ function! minx#u#next_syntax_group() abort
   for l:col in range(col('.') + 1, col('$'))
     let l:pos = [line('.'), l:col]
     if !minx#syntax#in(l:group_name, l:pos)
-      return s:move(l:pos)
+      return minx#u#move(l:pos)
     endif
   endfor
   return ''
@@ -69,12 +69,12 @@ endfunction
 "
 " minx#u#search
 "
-function! minx#u#search(pattern) abort
-  let l:pos = searchpos(a:pattern, 'znc')
+function! minx#u#search(pattern, ...) abort
+  let l:pos = searchpos(a:pattern, get(a:000, 0, 'znc'))
   if l:pos[0] == 0
     return ''
   endif
-  return s:move(l:pos)
+  return minx#u#move(l:pos)
 endfunction
 
 "
@@ -85,13 +85,13 @@ function! minx#u#searchpair(start, middle, end) abort
   if l:pos[0] == 0
     return ''
   endif
-  return s:move(l:pos)
+  return minx#u#move(l:pos)
 endfunction
 
 "
-" s:move
+" minx#u#move
 "
-function! s:move(pos) abort
+function! minx#u#move(pos) abort
   if a:pos[0] ==# line('.')
     let l:col = col('.')
     if l:col < a:pos[1]

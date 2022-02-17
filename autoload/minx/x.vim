@@ -1,3 +1,5 @@
+let s:marks = {}
+
 "
 " minx#x#token
 "
@@ -38,5 +40,28 @@ endfunction
 "
 function! minx#x#searchpair(...) abort
   return function('minx#u#searchpair', a:000)
+endfunction
+
+"
+" minx#x#mark
+"
+function! minx#x#mark(...) abort
+  let l:ctx = {}
+  function! l:ctx.callback(name) abort
+    let s:marks[a:name] = getcurpos()[1:2]
+    return ''
+  endfunction
+  return function(l:ctx.callback, a:000, l:ctx)
+endfunction
+
+"
+" minx#x#back
+"
+function! minx#x#back(...) abort
+  let l:ctx = {}
+  function! l:ctx.callback(name) abort
+    return minx#u#move(get(s:marks, a:name, getcurpos()[1:2]))
+  endfunction
+  return function(l:ctx.callback, a:000, l:ctx)
 endfunction
 
